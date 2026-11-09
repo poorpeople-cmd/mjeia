@@ -29,7 +29,7 @@ const { spawn } = require('child_process');
     const page = await context.newPage();
 
     console.log(`[+] Website open ho rahi hai: ${url}`);
-    await page.goto(url, { waitUntil: 'networkidle' });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     console.log("[+] Facebook Live stream start ho rahi hai...");
 
