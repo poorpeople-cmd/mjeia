@@ -30,10 +30,13 @@ const { spawn } = require('child_process');
 
     console.log(`[+] Website open ho rahi hai: ${url}`);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    
+    // Website ko fully load hone ke liye 5 seconds ka waqfa
+    await page.waitForTimeout(5000);
 
     console.log("[+] Facebook Live stream start ho rahi hai...");
 
-    // FFmpeg ka code jo browser ki screen capture karke Facebook ko bhejega
+    // FFmpeg ka code jo browser ki screen aur dummy audio capture karke Facebook ko bhejega
     const rtmpUrl = `rtmps://live-api-s.facebook.com:443/rtmp/${streamKey}`;
     
     const ffmpeg = spawn('ffmpeg', [
@@ -42,6 +45,15 @@ const { spawn } = require('child_process');
         '-video_size', '1280x720',       // Resolution
         '-framerate', '30',              // FPS
         '-i', process.env.DISPLAY || ':99', // Xvfb Display ID
+        
+        // --- FACEBOOK REQUIREMENT: Dummy Audio Track ---
+        // (Kyunke Facebook bina audio ke stream reject kar deta hai)
+        '-f', 'lavfi',
+        '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
+        '-c:a', 'aac',
+        '-b:a', '128k',
+        // ----------------------------------------------
+
         '-c:v', 'libx264',               // Video Codec
         '-preset', 'veryfast',           // CPU usage preset
         '-b:v', '2500k',                 // Video Bitrate
@@ -53,9 +65,13 @@ const { spawn } = require('child_process');
         rtmpUrl
     ]);
 
+    // Ab saare errors aur logs terminal par show honge
     ffmpeg.stderr.on('data', (data) => {
-        // Agar error/logs dekhne hon toh isko uncomment kar dein
-        // console.log(`FFmpeg: ${data}`); 
+        console.log(`FFmpeg Log: ${data.toString()}`); 
+    });
+
+    ffmpeg.on('error', (err) => {
+        console.error(`[❌] FFmpeg Process Error: ${err.message}`);
     });
 
     console.log(`[+] Stream chalu hai! Yeh script ${durationMinutes} minutes tak chalegi...`);
