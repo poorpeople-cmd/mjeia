@@ -1,0 +1,9 @@
+{
+  "name": "fb-broadcaster",
+  "version": "1.0.0",
+  "description": "Playwright to FB Live",
+  "main": "broadcast.js",
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}
